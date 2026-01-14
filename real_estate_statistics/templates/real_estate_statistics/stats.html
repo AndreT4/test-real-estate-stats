@@ -1,0 +1,93 @@
+{% extends 'real_estate_statistics/base.html' %}
+
+{% block content %}
+<h2>Real Estate Statistics</h2>
+
+<form method="GET" class="row g-3 mb-4">
+    <div class="col-md-4">
+        <label for="city" class="form-label">City</label>
+        <input type="text" class="form-control" id="city" name="city" value="{{ filters.city|default:'' }}"
+            list="city-list" autocomplete="off">
+        <datalist id="city-list"></datalist>
+    </div>
+    <div class="col-md-4">
+        <label for="zip_code" class="form-label">Zip Code</label>
+        <input type="text" class="form-control" id="zip_code" name="zip_code" value="{{ filters.zip_code|default:'' }}">
+    </div>
+    <div class="col-md-4">
+        <label for="department" class="form-label">Department</label>
+        <input type="text" class="form-control" id="department" name="department"
+            value="{{ filters.department|default:'' }}" list="department-list" autocomplete="off">
+        <datalist id="department-list"></datalist>
+    </div>
+    <div class="col-12">
+        <button type="submit" class="btn btn-primary">Calculate</button>
+        <a href="/" class="btn btn-secondary">Reset</a>
+    </div>
+</form>
+
+{% if filters.city or filters.zip_code or filters.department %}
+<div class="mb-3">
+    Active Filters:
+    {% if filters.city %} <span class="badge bg-info text-dark">City: {{ filters.city }}</span> {% endif %}
+    {% if filters.zip_code %} <span class="badge bg-info text-dark">Zip: {{ filters.zip_code }}</span> {% endif %}
+    {% if filters.department %} <span class="badge bg-info text-dark">Dept: {{ filters.department }}</span> {% endif %}
+</div>
+{% endif %}
+
+{% if stats %}
+<div class="card">
+    <div class="card-header">
+        Results (Based on {{ stats.count }} ads)
+    </div>
+    <div class="card-body">
+        <div class="row text-center">
+            <div class="col-md-4">
+                <h3>{{ stats.avg }} €</h3>
+                <p class="text-muted">Average Charges</p>
+            </div>
+            <div class="col-md-4">
+                <h3>{{ stats.q10 }} €</h3>
+                <p class="text-muted">10% Quantile</p>
+            </div>
+            <div class="col-md-4">
+                <h3>{{ stats.q90 }} €</h3>
+                <p class="text-muted">90% Quantile</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% elif error %}
+<div class="alert alert-warning">
+    {{ error }}
+</div>
+{% endif %}
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        function setupAutocomplete(inputId, listId, fieldName) {
+            const input = document.getElementById(inputId);
+            const dataList = document.getElementById(listId);
+
+            input.addEventListener('input', function () {
+                const val = this.value;
+                if (val.length < 3) return;
+
+                fetch(`/autocomplete/?field=${fieldName}&q=${encodeURIComponent(val)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        dataList.innerHTML = '';
+                        data.forEach(item => {
+                            const option = document.createElement('option');
+                            option.value = item;
+                            dataList.appendChild(option);
+                        });
+                    });
+            });
+        }
+
+        setupAutocomplete('city', 'city-list', 'city');
+        setupAutocomplete('department', 'department-list', 'department');
+    });
+</script>
+{% endblock %}
