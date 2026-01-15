@@ -32,6 +32,6 @@ def calculate_stats(qs):
     return {
         'count': n,
         'avg': round(avg_charges, 2) if avg_charges else 0,
-        'q10': q10,
-        'q90': q90
+        'q10': round(q10, 2),
+        'q90': round(q90, 2)
     }

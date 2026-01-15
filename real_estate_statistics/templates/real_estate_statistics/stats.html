@@ -3,68 +3,66 @@
 {% block content %}
 <h2>Real Estate Statistics</h2>
 
-<form method="GET" class="row g-3 mb-4">
+<form id="stats-form" class="row g-3 mb-4">
     <div class="col-md-4">
         <label for="city" class="form-label">City</label>
-        <input type="text" class="form-control" id="city" name="city" value="{{ filters.city|default:'' }}"
-            list="city-list" autocomplete="off">
+        <input type="text" class="form-control" id="city" name="city" list="city-list" autocomplete="off">
         <datalist id="city-list"></datalist>
     </div>
     <div class="col-md-4">
         <label for="zip_code" class="form-label">Zip Code</label>
-        <input type="text" class="form-control" id="zip_code" name="zip_code" value="{{ filters.zip_code|default:'' }}">
+        <input type="text" class="form-control" id="zip_code" name="zip_code">
     </div>
     <div class="col-md-4">
         <label for="department" class="form-label">Department</label>
-        <input type="text" class="form-control" id="department" name="department"
-            value="{{ filters.department|default:'' }}" list="department-list" autocomplete="off">
-        <datalist id="department-list"></datalist>
+        <input type="text" class="form-control" id="department" name="department" autocomplete="off">
     </div>
     <div class="col-12">
         <button type="submit" class="btn btn-primary">Calculate</button>
-        <a href="/" class="btn btn-secondary">Reset</a>
+        <button type="button" id="reset-btn" class="btn btn-secondary">Reset</button>
     </div>
 </form>
 
-{% if filters.city or filters.zip_code or filters.department %}
-<div class="mb-3">
-    Active Filters:
-    {% if filters.city %} <span class="badge bg-info text-dark">City: {{ filters.city }}</span> {% endif %}
-    {% if filters.zip_code %} <span class="badge bg-info text-dark">Zip: {{ filters.zip_code }}</span> {% endif %}
-    {% if filters.department %} <span class="badge bg-info text-dark">Dept: {{ filters.department }}</span> {% endif %}
-</div>
-{% endif %}
-
-{% if stats %}
-<div class="card">
-    <div class="card-header">
-        Results (Based on {{ stats.count }} ads)
+<div id="results-area" style="display: none;">
+    <div class="mb-3">
+        Active Filters:
+        <span id="active-city" class="badge bg-info text-dark" style="display:none"></span>
+        <span id="active-zip" class="badge bg-info text-dark" style="display:none"></span>
+        <span id="active-dept" class="badge bg-info text-dark" style="display:none"></span>
     </div>
-    <div class="card-body">
-        <div class="row text-center">
-            <div class="col-md-4">
-                <h3>{{ stats.avg }} €</h3>
-                <p class="text-muted">Average Charges</p>
-            </div>
-            <div class="col-md-4">
-                <h3>{{ stats.q10 }} €</h3>
-                <p class="text-muted">10% Quantile</p>
-            </div>
-            <div class="col-md-4">
-                <h3>{{ stats.q90 }} €</h3>
-                <p class="text-muted">90% Quantile</p>
+
+    <div class="card">
+        <div class="card-header">
+            Results (Based on <span id="stats-count">0</span> ads)
+        </div>
+        <div class="card-body">
+            <div class="row text-center">
+                <div class="col-md-4">
+                    <h3 id="stats-avg">0 €</h3>
+                    <p class="text-muted">Average Charges</p>
+                </div>
+                <div class="col-md-4">
+                    <h3 id="stats-q10">0 €</h3>
+                    <p class="text-muted">10% Quantile</p>
+                </div>
+                <div class="col-md-4">
+                    <h3 id="stats-q90">0 €</h3>
+                    <p class="text-muted">90% Quantile</p>
+                </div>
             </div>
         </div>
     </div>
 </div>
-{% elif error %}
-<div class="alert alert-warning">
-    {{ error }}
-</div>
-{% endif %}
+
+<div id="error-alert" class="alert alert-warning" style="display: none;"></div>
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        const form = document.getElementById('stats-form');
+        const resultsArea = document.getElementById('results-area');
+        const errorAlert = document.getElementById('error-alert');
+
+        // Autocomplete setup
         function setupAutocomplete(inputId, listId, fieldName) {
             const input = document.getElementById(inputId);
             const dataList = document.getElementById(listId);
@@ -87,7 +85,70 @@
         }
 
         setupAutocomplete('city', 'city-list', 'city');
-        setupAutocomplete('department', 'department-list', 'department');
+
+        // Reset button
+        document.getElementById('reset-btn').addEventListener('click', function () {
+            form.reset();
+            resultsArea.style.display = 'none';
+            errorAlert.style.display = 'none';
+        });
+
+        // Form submission
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const city = document.getElementById('city').value;
+            const zip_code = document.getElementById('zip_code').value;
+            const department = document.getElementById('department').value;
+
+            errorAlert.style.display = 'none';
+            resultsArea.style.display = 'none';
+
+            const params = new URLSearchParams();
+            if (city) params.append('city', city);
+            if (zip_code) params.append('zip_code', zip_code);
+            if (department) params.append('department', department);
+
+            if (params.toString() === '') {
+                // No filters
+                return;
+            }
+
+            fetch(`/api/stats/?${params.toString()}`)
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(data => { throw new Error(data.error || 'API Error'); });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Update active filters
+                    const cityBadge = document.getElementById('active-city');
+                    const zipBadge = document.getElementById('active-zip');
+                    const deptBadge = document.getElementById('active-dept');
+
+                    cityBadge.textContent = `City: ${city}`;
+                    cityBadge.style.display = city ? 'inline-block' : 'none';
+
+                    zipBadge.textContent = `Zip: ${zip_code}`;
+                    zipBadge.style.display = zip_code ? 'inline-block' : 'none';
+
+                    deptBadge.textContent = `Dept: ${department}`;
+                    deptBadge.style.display = department ? 'inline-block' : 'none';
+
+                    // Update stats
+                    document.getElementById('stats-count').textContent = data.count;
+                    document.getElementById('stats-avg').textContent = `${data.avg} €`;
+                    document.getElementById('stats-q10').textContent = `${data.q10} €`;
+                    document.getElementById('stats-q90').textContent = `${data.q90} €`;
+
+                    resultsArea.style.display = 'block';
+                })
+                .catch(error => {
+                    errorAlert.textContent = error.message;
+                    errorAlert.style.display = 'block';
+                });
+        });
     });
 </script>
 {% endblock %}

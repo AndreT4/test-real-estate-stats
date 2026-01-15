@@ -5,16 +5,71 @@
 
 <div class="row">
     <div class="col-md-8">
-        <form method="POST">
-            {% csrf_token %}
+        <div id="alert-container" style="display:none;" class="alert"></div>
+
+        <form id="import-form">
             <div class="mb-3">
                 <label for="url" class="form-label">BienIci Ad URL</label>
                 <input type="url" class="form-control" id="url" name="url"
                     placeholder="https://www.bienici.com/annonce/..." required>
                 <div class="form-text">Paste the full URL of the ad.</div>
             </div>
-            <button type="submit" class="btn btn-success">Import</button>
+            <button type="submit" class="btn btn-success" id="submit-btn">Import</button>
         </form>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.getElementById('import-form');
+        const alertContainer = document.getElementById('alert-container');
+        const submitBtn = document.getElementById('submit-btn');
+
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            const url = document.getElementById('url').value;
+            const csrfToken = '{{ csrf_token }}';
+
+            alertContainer.style.display = 'none';
+            alertContainer.className = 'alert';
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Importing...';
+
+            fetch('/api/import/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify({ url: url })
+            })
+                .then(response => response.json().then(data => ({
+                    ok: response.ok,
+                    status: response.status,
+                    body: data
+                })))
+                .then(result => {
+                    if (result.ok) {
+                        alertContainer.className = 'alert alert-success';
+                        alertContainer.textContent = result.body.message;
+                        form.reset();
+                    } else {
+                        alertContainer.className = 'alert alert-danger';
+                        alertContainer.textContent = result.body.error || 'An error occurred';
+                    }
+                    alertContainer.style.display = 'block';
+                })
+                .catch(error => {
+                    alertContainer.className = 'alert alert-danger';
+                    alertContainer.textContent = 'Network or parsing error: ' + error;
+                    alertContainer.style.display = 'block';
+                })
+                .finally(() => {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Import';
+                });
+        });
+    });
+</script>
 {% endblock %}
