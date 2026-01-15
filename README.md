@@ -17,7 +17,7 @@ Application Django pour consulter des statistiques sur les charges de coproprié
 
 ## Installation
 
-1.  Cloner le projet :
+1.  Cloner le projet
 
 2.  Installer les dépendances :
     ```bash
@@ -30,9 +30,8 @@ Application Django pour consulter des statistiques sur les charges de coproprié
     ```
 
 4.  (Optionnel) Importer le jeu de données initial :
-    Si vous avez le fichier `dataset_annonces.csv` à la racine :
     ```bash
-    python3 manage.py import_ads dataset_annonces.csv
+    python3 manage.py import_ads <PATH DU FICHIER DE DONNÉES>
     ```
 
 ## Lancement
@@ -47,7 +46,7 @@ python3 manage.py runserver
 ## Utilisation
 
 ### Consulter les statistiques
-Rendez-vous sur la page d'accueil. Entrez une ville ou un département pour voir les statistiques de charges (Moyenne, Q10, Q90).
+Sur la page d'accueil, renseignez une ville ou un département pour voir les statistiques de charges (Moyenne, Q10, Q90).
 
 ### Ajouter une annonce
 Allez sur `/import/` (bouton "Import Ad").

@@ -1,5 +1,7 @@
 import csv
+
 from django.core.management.base import BaseCommand
+
 from real_estate_statistics.models import RealEstateAd
 
 

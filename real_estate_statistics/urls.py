@@ -1,7 +1,7 @@
-from django.urls import path, include
-from .views import StatsView, ImportAdView
-from .api_views import StatsAPIView, ImportAdAPIView, AutocompleteAPIView
+from django.urls import path
 
+from .api_views import AutocompleteAPIView, ImportAdAPIView, StatsAPIView
+from .views import ImportAdView, StatsView
 
 urlpatterns = [
     path("", StatsView.as_view(), name="stats"),

@@ -1,6 +1,6 @@
-from django.db.models import Avg
-from .models import RealEstateAd
 from statistics import quantiles
+
+from django.db.models import Avg
 
 
 def calculate_stats(qs):

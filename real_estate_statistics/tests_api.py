@@ -1,8 +1,10 @@
+from unittest.mock import MagicMock, patch
+
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
+
 from .models import RealEstateAd
-from unittest.mock import patch, MagicMock
 
 
 class RealEstateAdAPITests(APITestCase):
